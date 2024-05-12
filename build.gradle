@@ -1,0 +1,80 @@
+plugins {
+	id 'java'
+	id 'org.springframework.boot' version '3.2.5'
+	id 'io.spring.dependency-management' version '1.1.4'
+	// ref: https://www.jooq.org/doc/latest/manual/code-generation/codegen-gradle/
+	id "org.jooq.jooq-codegen-gradle" version "3.19.8"
+}
+
+group = 'com.example'
+version = '0.0.1-SNAPSHOT'
+
+java {
+	sourceCompatibility = '17'
+}
+
+repositories {
+	mavenCentral()
+}
+
+dependencies {
+	implementation 'org.springframework.boot:spring-boot-starter-jooq'
+	developmentOnly 'org.springframework.boot:spring-boot-devtools'
+
+	// update the database-related dependencies to match your DBMS
+	runtimeOnly 'org.mariadb.jdbc:mariadb-java-client'
+	jooqCodegen 'org.mariadb.jdbc:mariadb-java-client'
+
+	testImplementation 'org.springframework.boot:spring-boot-starter-test'
+}
+
+// ref: https://www.jooq.org/doc/latest/manual/code-generation/codegen-configuration/
+jooq {
+	configuration {
+		jdbc {
+			driver = 'org.mariadb.jdbc.Driver'
+			url = 'jdbc:mariadb://localhost:3306/DB'
+			user = 'DB_USER'
+			password = 'DB_PASSWORD'
+		}
+
+		generator {
+			database {
+				// https://www.jooq.org/doc/latest/manual/code-generation/codegen-advanced/codegen-config-database/codegen-database-name/
+				name = 'org.jooq.meta.mariadb.MariaDBDatabase'
+				inputSchema = 'DB_SCHEMA'
+			}
+
+			generate {
+
+			}
+
+			strategy {
+				matchers {
+					tables {
+						table {
+							tableClass {
+								transform = 'PASCAL'
+								expression = 'J_$0'
+							}
+						}
+					}
+				}
+			}
+
+			// https://www.jooq.org/doc/latest/manual/code-generation/codegen-advanced/codegen-config-target/
+			target {
+				packageName = 'jooq'
+				directory = 'build/generated-sources/jooq/main'
+			}
+		}
+	}
+}
+
+sourceSets {
+	main.java.srcDirs += [ 'build/generated-sources/jooq' ]
+}
+
+tasks.named('test') {
+	useJUnitPlatform()
+}
